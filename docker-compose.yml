@@ -1,0 +1,29 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: treat-backend:latest
+    container_name: treat-backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./backend/treat_log.db:/app/treat_log.db
+    network_mode: host
+    environment:
+      TZ: "America/New_York"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: treat-frontend:latest
+    container_name: treat-frontend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - 3000:3000
+    environment:
+      TZ: "America/New_York"

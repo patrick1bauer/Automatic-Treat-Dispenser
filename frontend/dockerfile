@@ -1,0 +1,37 @@
+# Stage 1: Install dependencies & build
+FROM node:18-alpine AS builder
+
+# Set working dir
+WORKDIR /app
+
+# Copy package manifests
+COPY package.json yarn.lock* package-lock.json* ./
+
+# Install deps
+RUN if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then npm ci; \
+    else npm install; fi
+
+# Copy source & build
+COPY . .
+RUN npm run build
+
+# Stage 2: Production image
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+# Only pull necessary files from builder
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+# Expose the port Next.js listens on
+EXPOSE 3000
+
+# Next.js in production mode
+ENV NODE_ENV=production
+
+# Start the app
+CMD ["npm", "run", "start"]
