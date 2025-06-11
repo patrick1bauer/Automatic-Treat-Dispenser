@@ -23,6 +23,7 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    network_mode: host
     ports:
       - 3000:3000
     environment:

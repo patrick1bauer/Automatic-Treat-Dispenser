@@ -22,8 +22,8 @@ pi = pigpio.pi()
 SERVO_GPIO = 15
 pi.set_mode(SERVO_GPIO, pigpio.OUTPUT)
 
-servoAngleMax = 180
-servoAngleMin = 0
+servoAngleMax = 120 # Fully open
+servoAngleMin = 45 # Fully closed
 
 ###################################################################################################
 # Database Setup                                                                                  #
@@ -68,24 +68,23 @@ signal.signal(signal.SIGTERM, handle_exit)
 
 def set_servo_angle(angle):
 
-    # Make sure the servo is within rotation limits (0° to 180°)
+    # Make sure the servo is within rotation limits
     if angle < servoAngleMin or angle > servoAngleMax:
-        print("Invalid angle. Must be between 0° and 180°.")
+        print("Invalid angle. Must be between 45° and 120°.")
         return
 
     pulse = int(500 + (angle / 180.0) * 2000)
     pi.set_servo_pulsewidth(SERVO_GPIO, pulse)
-    sleep(0.5)
+    sleep(0.1)
     pi.set_servo_pulsewidth(SERVO_GPIO, 0)
 
     print("Servo moved to angle: " + str(angle) + "°")
 
 def release_treat():
     print("Releasing treat...")
+    set_servo_angle(90)
+    sleep(0.2)
     set_servo_angle(45)
-    sleep(0.1)
-    set_servo_angle(0)
-    set_servo_angle(0)
     print("Treat released!")
 
     db = get_db_connection()
@@ -116,6 +115,11 @@ def api_history():
     ]
     return jsonify(history=history)
 
+@app.route('/api/test', methods=['GET'])
+def api_test():
+    print("Test Successful!")
+    return jsonify(success=True)
+
 ###################################################################################################
 # Main                                                                                            #
 ###################################################################################################
@@ -124,7 +128,7 @@ if __name__ == '__main__':
 
     init_db()
 
-    set_servo_angle(0)
+    set_servo_angle(45)
     sleep(1)
-    set_servo_angle(0)
+    set_servo_angle(45)
     app.run(host='0.0.0.0', port=61002) # Robert picked this port, so if anything goes wrong blame him.

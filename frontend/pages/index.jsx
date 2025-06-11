@@ -3,16 +3,19 @@ import { useState, useEffect } from 'react';
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [history, setHistory] = useState([]);
   const [histLoading, setHistLoading] = useState(true);
   const [histError, setHistError] = useState(null);
+
+  const backendUrl = 'http://10.1.10.158:61002';
 
   // Fetch history from the db
   const fetchHistory = async () => {
     setHistLoading(true);
     setHistError(null);
     try {
-      const res = await fetch('http://10.0.0.10:61002/api/history');
+      const res = await fetch(backendUrl + '/api/history');
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const json = await res.json();
       setHistory(json.history || []);
@@ -32,7 +35,7 @@ export default function Home() {
   const releaseTreat = async () => {
     setLoading(true)
     try {
-      const result = await fetch('http://10.0.0.10:61002/api/servo', { method: 'GET' })
+      const result = await fetch(backendUrl + '/api/servo', { method: 'GET' })
       const json = await result.json()
       if (json.success) {
         // Refresh history to include the new event
@@ -46,6 +49,25 @@ export default function Home() {
       alert('An error occurred while releasing the treat:' + error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const test = async () => {
+    setTesting(true)
+    try {
+      const result = await fetch(backendUrl + '/api/test', { method: 'GET'})
+      const json = await result.json()
+      if (json.success) {
+        alert('Test successful: ' + (json.message || 'Unknown success'));
+      } else {
+        alert('Test failed: ' + (json.message || 'Unknown error'));
+        console.error('Error:', json);
+      }
+    } catch (errors) {
+      console.error(error);
+      alert('An error occured while testing: ' + error);
+    } finally {
+      setTesting(false)
     }
   }
 
@@ -63,6 +85,15 @@ export default function Home() {
         >
           {loading ? 'Releasing...' : ' Release Treat'}
         </button>
+
+        <button
+          onClick={test}
+          disabled={testing}
+          className="test-button"
+        >
+          {testing ? 'Testing...' : ' Test'}
+        </button>
+
 
         <section style={{ marginTop: '2rem' }}>
           <h2>History</h2>
