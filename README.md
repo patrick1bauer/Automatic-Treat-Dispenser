@@ -8,7 +8,7 @@ This repository contains a simple treat dispenser project with a Flask backend a
 - Node.js (v20.9+ recommended; Node 26 is fine for Docker) and `npm` for local frontend builds
 - Python 3.11+ and `pip` for local backend builds
 
-## Build frontend locally
+## Run frontend locally
 
 1. Change to the frontend folder:
 
@@ -23,17 +23,25 @@ npm install
 npm run build
 ```
 
-## Containerize & launch with Docker Compose
+## Build Images
 
 From the repository root run:
 
 ```
-docker compose up -d --build
+docker compose build
 ```
 
-This uses `docker-compose.yml` and will create two services:
+This uses `docker-compose.yml` and will create two images:
 - `treat-backend` (backend)
 - `treat-frontend` (frontend)
+
+## Run Images
+
+From the repository root run:
+
+```
+docker compose up -d
+```
 
 ## Accessing the services
 
