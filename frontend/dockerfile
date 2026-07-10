@@ -1,5 +1,5 @@
 # Stage 1: Install dependencies & build
-FROM node:18-alpine AS builder
+FROM node:26-alpine AS builder
 
 # Set working dir
 WORKDIR /app
@@ -9,7 +9,7 @@ COPY package.json yarn.lock* package-lock.json* ./
 
 # Install deps
 RUN if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-    elif [ -f package-lock.json ]; then npm ci; \
+    elif [ -f package-lock.json ]; then npm install; \
     else npm install; fi
 
 # Copy source & build
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production image
-FROM node:18-alpine AS runner
+FROM node:26-alpine AS runner
 
 WORKDIR /app
 
