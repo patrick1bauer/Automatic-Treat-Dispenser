@@ -1,17 +1,49 @@
 # Automatic-Treat-Dispenser
 
-1. Edit file & save
+This repository contains a simple treat dispenser project with a Flask backend and a Next.js frontend. Below are concise instructions to build the frontend and backend locally, create Docker images (using the included Dockerfiles), and launch the services with Docker Compose.
 
-2. Update raspberry pi shit
-sudo apt update
-sudo apt upgrade
+## Prerequisites
 
-3. Shut down treat dispener:
-sudo docker compose -f docker-compose.yml down
+- Docker and Docker Compose (or the `docker compose` plugin)
+- Node.js (v20.9+ recommended; Node 26 is fine for Docker) and `npm` for local frontend builds
+- Python 3.11+ and `pip` for local backend builds
 
-4. Remove images
-sudo docker image rm treat-backend
-sudo docker image rm treat-frontend
+## Run frontend locally
 
-5. Compile & Bring up treat dispenser
-sudo docker compose -f docker-compose.yml up -d
+1. Change to the frontend folder:
+
+```
+cd frontend
+```
+
+2. Install dependencies and build the production bundle:
+
+```
+npm install
+npm run build
+```
+
+## Build Images
+
+From the repository root run:
+
+```
+docker compose build
+```
+
+This uses `docker-compose.yml` and will create two images:
+- `treat-backend` (backend)
+- `treat-frontend` (frontend)
+
+## Run Images
+
+From the repository root run:
+
+```
+docker compose up -d
+```
+
+## Accessing the services
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:61002 (if using host networking)
