@@ -17,7 +17,7 @@ services:
     network_mode: host
     environment:
       TZ: "America/New_York"
-      PIGPIO_SIMULATE: 1 # Set to 1 for testing, 0 for production
+      PIGPIO_SIMULATE: 0 # Set to 1 for testing, 0 for production
       DB_PATH: /app/data/automatic_treat_dispenser.db
       APP_VERSION: *app_version
 
