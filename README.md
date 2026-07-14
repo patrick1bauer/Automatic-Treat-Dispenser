@@ -28,7 +28,7 @@ npm run build
 From the repository root run:
 
 ```
-docker compose build
+sudo docker compose -f docker-compose.yml build
 ```
 
 This uses `docker-compose.yml` and will create two images:
@@ -40,7 +40,7 @@ This uses `docker-compose.yml` and will create two images:
 From the repository root run:
 
 ```
-docker compose up -d
+sudo docker compose -f docker-compose.yml up -d
 ```
 
 ## Accessing the services

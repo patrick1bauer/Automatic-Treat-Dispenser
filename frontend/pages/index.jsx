@@ -2,44 +2,62 @@ import CopyText from '@/components/CopyText';
 import { useState, useEffect } from 'react';
 
 export default function Home() {
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [histLoading, setHistLoading] = useState(true);
-  const [histError, setHistError] = useState(null);
+  const [releasingTreatState, setReleasingTreatState] = useState(false);
 
-  const backendUrl = 'http://10.1.10.158:61002';
+  const [testingState, setTestingState] = useState(false);
 
-  // Fetch history from the db
-  const fetchHistory = async () => {
-    setHistLoading(true);
-    setHistError(null);
+  const [historyLoadingState, setHistoryLoadingState] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [historyErrorMessage, setHistoryErrorMessage] = useState(null);
+
+  const [servoAngleOpenLoadingState, setServoAngleOpenLoadingState] = useState(false);
+  const [servoAngleOpen, setServoAngleOpen] = useState(null);
+  const [servoAngleOpenInput, setServoAngleOpenInput] = useState('');
+
+  const [servoAngleClosedLoadingState, setServoAngleClosedLoadingState] = useState(false);
+  const [servoAngleClosed, setServoAngleClosed] = useState(null);
+  const [servoAngleClosedInput, setServoAngleClosedInput] = useState('');
+
+  const [servoOpenDurationLoadingState, setServoOpenDurationLoadingState] = useState(false);
+  const [servoOpenDuration, setServoOpenDuration] = useState(null);
+  const [servoOpenDurationInput, setServoOpenDurationInput] = useState('');
+
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== 'undefined' ? `http://${window.location.hostname}:61002` : 'http://localhost:61002');
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || 'dev';
+
+  // GET request to fetch history from the backend
+  const getHistory = async () => {
+    setHistoryLoadingState(true);
+    setHistoryErrorMessage(null);
     try {
-      const res = await fetch(backendUrl + '/api/history');
+      const res = await fetch(backendUrl + '/api/get/history');
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const json = await res.json();
-      setHistory(json.history || []);
+      setHistoryData(json.history || []);
     } catch (err) {
       console.error('History fetch error', err);
-      setHistError('Failed to load history');
+      setHistoryErrorMessage('Failed to load history');
     } finally {
-      setHistLoading(false);
+      setHistoryLoadingState(false);
     }
   };
 
-  // On mount, load history
+  // On mount, load history and the current servo angle value
   useEffect(() => {
-    fetchHistory();
+    getHistory();
+    getServoAngleOpen();
+    getServoAngleClosed();
+    getServoOpenDuration();
   }, []);
 
   const releaseTreat = async () => {
-    setLoading(true)
+    setReleasingTreatState(true)
     try {
-      const result = await fetch(backendUrl + '/api/servo', { method: 'GET' })
+      const result = await fetch(backendUrl + '/api/post/releaseTreat', { method: 'POST' })
       const json = await result.json()
       if (json.success) {
         // Refresh history to include the new event
-        await fetchHistory();
+        await getHistory();
       } else {
         alert('Failed to release treat: ' + (json.message || 'Unknown error'));
         console.error('Error:', json)
@@ -48,28 +66,187 @@ export default function Home() {
       console.error(error)
       alert('An error occurred while releasing the treat:' + error)
     } finally {
-      setLoading(false)
+      setReleasingTreatState(false)
     }
   }
 
-  const test = async () => {
-    setTesting(true)
+  const getTest = async () => {
+    setTestingState(true)
     try {
-      const result = await fetch(backendUrl + '/api/test', { method: 'GET'})
+      const result = await fetch(backendUrl + '/api/get/test', { method: 'GET'})
       const json = await result.json()
       if (json.success) {
-        alert('Test successful: ' + (json.message || 'Unknown success'));
+        alert('Test successful: ' + (json.message || 'Success! Front end and back end are communicating properly.'));
       } else {
-        alert('Test failed: ' + (json.message || 'Unknown error'));
+        alert('Test failed: ' + (json.message || 'Error! Front end and back end are not communicating properly.'));
         console.error('Error:', json);
       }
-    } catch (errors) {
+    } catch (error) {
       console.error(error);
-      alert('An error occured while testing: ' + error);
+      alert('An error occurred while testing: ' + error);
     } finally {
-      setTesting(false)
+      setTestingState(false)
     }
   }
+
+  const getServoAngleOpen = async () => {
+    setServoAngleOpenLoadingState(true);
+    try {
+      const result = await fetch(backendUrl + '/api/get/servoAngleOpen', { method: 'GET' });
+      const json = await result.json();
+      const servoAngleOpenValue = json.servoAngleOpen ?? null;
+
+      if (servoAngleOpenValue !== null) {
+        setServoAngleOpen(servoAngleOpenValue);
+        setServoAngleOpenInput(String(servoAngleOpenValue));
+      } else {
+        alert('Failed to get servo angle open: ' + (json.message || 'Unknown error'));
+        console.error('Error:', json);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred while fetching the servo angle open: ' + error);
+    } finally {
+      setServoAngleOpenLoadingState(false);
+    }
+  }
+
+  const putServoAngleOpen = async () => {
+    const servoAngleOpenValue = Number(servoAngleOpenInput);
+
+    if (Number.isNaN(servoAngleOpenValue)) {
+      alert('Please enter a valid number for servoAngleOpen');
+      return;
+    }
+
+    setServoAngleOpenLoadingState(true);
+    try {
+      const result = await fetch(backendUrl + '/api/put/servoAngleOpen', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servoAngleOpen: servoAngleOpenValue })
+      });
+      const json = await result.json();
+
+      if (json.success) {
+        await getServoAngleOpen();
+      } else {
+        alert('Failed to update servo angle open: ' + (json.error || 'Unknown error'));
+        console.error('Error:', json);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred while updating the servo angle open: ' + error);
+    } finally {
+      setServoAngleOpenLoadingState(false);
+    }
+  };
+
+  const getServoAngleClosed = async () => {
+    setServoAngleClosedLoadingState(true);
+    try {
+      const result = await fetch(backendUrl + '/api/get/servoAngleClosed', { method: 'GET' });
+      const json = await result.json();
+      const servoAngleClosedValue = json.servoAngleClosed ?? null;
+
+      if (servoAngleClosedValue !== null) {
+        setServoAngleClosed(servoAngleClosedValue);
+        setServoAngleClosedInput(String(servoAngleClosedValue));
+      } else {
+        alert('Failed to get servo angle closed: ' + (json.message || 'Unknown error'));
+        console.error('Error:', json);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred while fetching the servo angle closed: ' + error);
+    } finally {
+      setServoAngleClosedLoadingState(false);
+    }
+  }
+
+  const putServoAngleClosed = async () => {
+    const servoAngleClosedValue = Number(servoAngleClosedInput);
+
+    if (Number.isNaN(servoAngleClosedValue)) {
+      alert('Please enter a valid number for servoAngleClosed');
+      return;
+    }
+
+    setServoAngleClosedLoadingState(true);
+    try {
+      const result = await fetch(backendUrl + '/api/put/servoAngleClosed', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servoAngleClosed: servoAngleClosedValue })
+      });
+      const json = await result.json();
+
+      if (json.success) {
+        await getServoAngleClosed();
+      } else {
+        alert('Failed to update servo angle closed: ' + (json.error || 'Unknown error'));
+        console.error('Error:', json);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred while updating the servo angle closed: ' + error);
+    } finally {
+      setServoAngleClosedLoadingState(false);
+    }
+  };
+
+  const getServoOpenDuration = async () => {
+    setServoOpenDurationLoadingState(true);
+    try {
+      const result = await fetch(backendUrl + '/api/get/servoOpenDuration', { method: 'GET' });
+      const json = await result.json();
+      const servoOpenDurationValue = json.servoOpenDuration ?? null;
+
+      if (servoOpenDurationValue !== null) {
+        setServoOpenDuration(servoOpenDurationValue);
+        setServoOpenDurationInput(String(servoOpenDurationValue));
+      } else {
+        alert('Failed to get servo open duration: ' + (json.message || 'Unknown error'));
+        console.error('Error:', json);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred while fetching the servo open duration: ' + error);
+    } finally {
+      setServoOpenDurationLoadingState(false);
+    }
+  }
+
+  const putServoOpenDuration = async () => {
+    const servoOpenDurationValue = Number(servoOpenDurationInput);
+
+    if (Number.isNaN(servoOpenDurationValue)) {
+      alert('Please enter a valid number for servoOpenDuration');
+      return;
+    }
+
+    setServoOpenDurationLoadingState(true);
+    try {
+      const result = await fetch(backendUrl + '/api/put/servoOpenDuration', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servoOpenDuration: servoOpenDurationValue })
+      });
+      const json = await result.json();
+
+      if (json.success) {
+        await getServoOpenDuration();
+      } else {
+        alert('Failed to update servo open duration: ' + (json.error || 'Unknown error'));
+        console.error('Error:', json);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('An error occurred while updating the servo open duration: ' + error);
+    } finally {
+      setServoOpenDurationLoadingState(false);
+    }
+  };
 
   return (
     <div className="div-component">
@@ -80,50 +257,85 @@ export default function Home() {
         <h2 id="status"></h2>
         <button
           onClick={releaseTreat}
-          disabled={loading}
+          disabled={releasingTreatState}
           className="treat-button"
         >
-          {loading ? 'Releasing...' : ' Release Treat'}
+          {releasingTreatState ? 'Releasing Treat...' : ' Release Treat'}
         </button>
-
+{/* 
         <button
-          onClick={test}
-          disabled={testing}
+          onClick={getTest}
+          disabled={testingState}
           className="test-button"
         >
-          {testing ? 'Testing...' : ' Test'}
-        </button>
+          {testingState ? 'Testing...' : ' Test'}
+        </button> */}
 
+        <div
+          className="servo-settings"
+        >
+          <span>Servo Angle Open:</span>
+          <span>{servoAngleOpenLoadingState ? 'Loading...' : servoAngleOpen ?? '—'}</span>
+          <input
+            type="number"
+            value={servoAngleOpenInput}
+            onChange={(event) => setServoAngleOpenInput(event.target.value)}
+            placeholder="New value"
+            style={{ width: '90px' }}
+          />
+          <button onClick={putServoAngleOpen} disabled={servoAngleOpenLoadingState}>
+            {servoAngleOpenLoadingState ? 'Updating...' : 'Update'}
+          </button>
+        </div>
 
-        <section style={{ marginTop: '2rem' }}>
+        <div
+          className="servo-settings"
+        >
+          <span>Servo Angle Closed:</span>
+          <span>{servoAngleClosedLoadingState ? 'Loading...' : servoAngleClosed ?? '—'}</span>
+          <input
+            type="number"
+            value={servoAngleClosedInput}
+            onChange={(event) => setServoAngleClosedInput(event.target.value)}
+            placeholder="New value"
+            style={{ width: '90px' }}
+          />
+          <button onClick={putServoAngleClosed} disabled={servoAngleClosedLoadingState}>
+            {servoAngleClosedLoadingState ? 'Updating...' : 'Update'}
+          </button>
+        </div>
+
+        <div
+          className="servo-settings"
+        >
+          <span>Servo Open Duration:</span>
+          <span>{servoOpenDurationLoadingState ? 'Loading...' : servoOpenDuration ?? '—'}</span>
+          <input
+            type="number"
+            value={servoOpenDurationInput}
+            onChange={(event) => setServoOpenDurationInput(event.target.value)}
+            placeholder="New value"
+            style={{ width: '90px' }}
+          />
+          <button onClick={putServoOpenDuration} disabled={servoOpenDurationLoadingState}>
+            {servoOpenDurationLoadingState ? 'Updating...' : 'Update'}
+          </button>
+        </div>
+
+        <section className="history-panel">
           <h2>History</h2>
 
-          {histLoading && <p>Loading history…</p>}
-          {histError && <p style={{ color: 'red' }}>{histError}</p>}
+          {historyLoadingState && <p>Loading history…</p>}
+          {historyErrorMessage && <p style={{ color: 'red' }}>{historyErrorMessage}</p>}
 
-          {!histLoading && !histError && history.length === 0 && (
+          {!historyLoadingState && !historyErrorMessage && historyData.length === 0 && (
             <p>No dispense events yet.</p>
           )}
 
-          {!histLoading && !histError && history.length > 0 && (
-            <ul
-              style={{
-                maxHeight: '200px',
-                overflowY: 'auto',
-                padding: 0,
-                listStyle: 'none',
-                border: '1px solid #ccc',
-                borderRadius: '4px'
-              }}
-            >
-              {history.map((evt) => (
-                <li
-                  key={evt.id}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    borderBottom: '1px solid #eee'
-                  }}
-                >
+          {!historyLoadingState && !historyErrorMessage && historyData.length > 0 && (
+            <ul className="history-list">
+              {historyData.map((evt) => (
+                <li key={evt.id}>
                   {new Date(evt.timestamp).toLocaleString()}
                 </li>
               ))}
@@ -131,6 +343,9 @@ export default function Home() {
           )}
         </section>
 
+        <footer className="app-footer">
+          <span>Version: {appVersion}</span>
+        </footer>
       </div>
     </div>
   );

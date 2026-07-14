@@ -1,30 +1,41 @@
+x-app-version: &app_version ${APP_VERSION}
+
 services:
   backend:
     build:
       context: ./backend
       dockerfile: dockerfile
-    image: treat-backend:latest
+      args:
+        APP_VERSION: *app_version
+    image: treat-backend:${APP_VERSION}
     container_name: treat-backend
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     volumes:
-      - ./backend/treat_log.db:/app/treat_log.db
+      - ./backend/data:/app/data
     network_mode: host
     environment:
       TZ: "America/New_York"
+      PIGPIO_SIMULATE: 1 # Set to 1 for testing, 0 for production
+      DB_PATH: /app/data/automatic_treat_dispenser.db
+      APP_VERSION: *app_version
 
   frontend:
     build:
       context: ./frontend
       dockerfile: dockerfile
-    image: treat-frontend:latest
+      args:
+        APP_VERSION: *app_version
+        NEXT_PUBLIC_APP_VERSION: *app_version
+    image: treat-frontend:${APP_VERSION}
     container_name: treat-frontend
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     network_mode: host
     ports:
-      - 3000:3000
+      - 3006:3006
     environment:
       TZ: "America/New_York"
+      NEXT_PUBLIC_APP_VERSION: *app_version

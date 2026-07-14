@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+ARG APP_VERSION=latest
+ENV APP_VERSION=${APP_VERSION}
+
 WORKDIR /app
 
 # The app uses pigpio via the daemon, so no extra GPIO package is needed here.

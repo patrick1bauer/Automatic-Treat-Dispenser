@@ -1,11 +1,19 @@
 # Stage 1: Install dependencies & build
 FROM node:26-alpine AS builder
 
+ARG APP_VERSION=latest
+ARG NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
+ENV APP_VERSION=${APP_VERSION}
+ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}
+
 # Set working dir
 WORKDIR /app
 
 # Copy package manifests
 COPY package.json yarn.lock* package-lock.json* ./
+
+# Keep the package metadata aligned with the build version
+RUN npm pkg set version="${APP_VERSION}"
 
 # Install deps
 RUN if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
@@ -28,7 +36,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 
 # Expose the port Next.js listens on
-EXPOSE 3000
+EXPOSE 3006
 
 # Next.js in production mode
 ENV NODE_ENV=production
