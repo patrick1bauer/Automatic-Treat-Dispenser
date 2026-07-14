@@ -82,7 +82,7 @@ def set_servo_angle(angle):
 
 def release_treat():
     print("Releasing treat...")
-    set_servo_angle(90)
+    set_servo_angle(95)
     sleep(0.2)
     set_servo_angle(45)
     print("Treat released!")

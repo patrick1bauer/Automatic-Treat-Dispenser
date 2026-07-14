@@ -2,9 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+WORKDIR /app
 # Install libgpiod for low-level access
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libgpiod2 \
+ && apt-get install -y --no-install-recommends libgpiod3 \
  && rm -rf /var/lib/apt/lists/*
 
 # Copy & install Python deps (including pigpio now)
