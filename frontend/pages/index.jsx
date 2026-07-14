@@ -53,7 +53,7 @@ export default function Home() {
   const releaseTreat = async () => {
     setReleasingTreatState(true)
     try {
-      const result = await fetch(backendUrl + '/api/post/releaseTreat', { method: 'POST' })
+      const result = await fetch(backendUrl + '/api/post/releaseTreat', { method: 'GET' })
       const json = await result.json()
       if (json.success) {
         // Refresh history to include the new event
