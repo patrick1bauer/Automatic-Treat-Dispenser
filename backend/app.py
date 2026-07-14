@@ -152,7 +152,7 @@ def release_treat():
 # Endpoints                                                                                       #
 ###################################################################################################
 
-@app.route('/api/post/releaseTreat', methods=['POST'])
+@app.route('/api/post/releaseTreat', methods=['GET'])
 def api_post_release_treat():
     result = release_treat()
     return jsonify(success=True)
